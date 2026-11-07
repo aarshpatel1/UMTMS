@@ -367,3 +367,192 @@ export async function deleteMultipleEntityRecords(entityKey, ids) {
     }
   }
 }
+
+/**
+ * Fetch Full Database Summary for Dashboard
+ */
+export async function fetchDashboardSummary() {
+  try {
+    const response = await fetch('/api/dashboard/summary', {
+      headers: { Accept: 'application/json' },
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const json = await response.json()
+    if (json && json.success) {
+      return {
+        data: json,
+        isFallback: false,
+        source: 'server',
+      }
+    }
+    throw new Error('Invalid dashboard payload format')
+  } catch (err) {
+    console.warn('Dashboard summary fetch failed, generating fallback summary:', err.message)
+    return {
+      data: generateFallbackDashboardSummary(),
+      isFallback: true,
+      source: 'offline-preview',
+      errorMessage: err.message,
+    }
+  }
+}
+
+function generateFallbackDashboardSummary() {
+  const tablesMeta = [
+    { key: 'public-transits', table: 'umtms.public_transit', label: 'Public Transits', category: 'Transit & Passenger', icon: 'bi-train-front', path: '/public-transits', count: 100 },
+    { key: 'rail-tracks', table: 'umtms.rail_track', label: 'Rail Tracks', category: 'Transit & Passenger', icon: 'bi-signpost-split', path: '/rail-tracks', count: 100 },
+    { key: 'trains', table: 'umtms.train', label: 'Trains', category: 'Transit & Passenger', icon: 'bi-train-lightrail-front', path: '/trains', count: 100 },
+    { key: 'buses', table: 'umtms.bus', label: 'Buses', category: 'Transit & Passenger', icon: 'bi-bus-front', path: '/buses', count: 100 },
+    { key: 'transit-schedules', table: 'umtms.transit_schedule', label: 'Transit Schedules', category: 'Transit & Passenger', icon: 'bi-calendar3', path: '/transit-schedules', count: 100 },
+    { key: 'passengers', table: 'umtms.passenger', label: 'Passengers', category: 'Transit & Passenger', icon: 'bi-people', path: '/passengers', count: 98 },
+    { key: 'traffic-authorities', table: 'umtms.traffic_authority', label: 'Traffic Authorities', category: 'Traffic & Enforcement', icon: 'bi-shield-check', path: '/traffic-authorities', count: 100 },
+    { key: 'traffic-violations', table: 'umtms.traffic_violation', label: 'Traffic Violations', category: 'Traffic & Enforcement', icon: 'bi-exclamation-triangle', path: '/traffic-violations', count: 100 },
+    { key: 'traffic-signals', table: 'umtms.traffic_signal', label: 'Traffic Signals', category: 'Traffic & Enforcement', icon: 'bi-traffic-light', path: '/traffic-signals', count: 100 },
+    { key: 'commits', table: 'umtms.commits', label: 'Commits (Violations)', category: 'Traffic & Enforcement', icon: 'bi-journal-check', path: '/commits', count: 100 },
+    { key: 'monitored-in', table: 'umtms.monitored_in', label: 'Monitored In', category: 'Traffic & Enforcement', icon: 'bi-eye', path: '/monitored-in', count: 100 },
+    { key: 'vehicles', table: 'umtms.vehicle', label: 'Vehicles', category: 'Vehicles & Emergency', icon: 'bi-car-front', path: '/vehicles', count: 100 },
+    { key: 'emergency-vehicles', table: 'umtms.emergency_vehicle', label: 'Emergency Vehicles', category: 'Vehicles & Emergency', icon: 'bi-truck', path: '/emergency-vehicles', count: 100 },
+    { key: 'emergency-responses', table: 'umtms.emergency_response', label: 'Emergency Responses', category: 'Vehicles & Emergency', icon: 'bi-activity', path: '/emergency-responses', count: 100 },
+    { key: 'roads', table: 'umtms.road', label: 'Roads', category: 'Infrastructure & Sensors', icon: 'bi-signpost-2', path: '/roads', count: 100 },
+    { key: 'intersections', table: 'umtms.intersection', label: 'Intersections', category: 'Infrastructure & Sensors', icon: 'bi-diagram-3', path: '/intersections', count: 100 },
+    { key: 'traffic-cameras', table: 'umtms.traffic_camera', label: 'Traffic Cameras', category: 'Infrastructure & Sensors', icon: 'bi-camera-video', path: '/traffic-cameras', count: 100 },
+    { key: 'road-sensors', table: 'umtms.road_sensor', label: 'Road Sensors', category: 'Infrastructure & Sensors', icon: 'bi-broadcast-pin', path: '/road-sensors', count: 100 },
+    { key: 'traffic-monitoring-records', table: 'umtms.traffic_monitoring_record', label: 'Monitoring Records', category: 'Infrastructure & Sensors', icon: 'bi-speedometer2', path: '/traffic-monitoring-records', count: 100 },
+    { key: 'historical-traffic-data', table: 'umtms.historical_traffic_data', label: 'Historical Data', category: 'Infrastructure & Sensors', icon: 'bi-graph-up', path: '/historical-traffic-data', count: 100 },
+    { key: 'locations', table: 'umtms.location', label: 'Locations', category: 'Infrastructure & Sensors', icon: 'bi-geo-alt', path: '/locations', count: 100 },
+    { key: 'city-planners', table: 'umtms.city_planner', label: 'City Planners', category: 'Infrastructure & Sensors', icon: 'bi-person-badge', path: '/city-planners', count: 100 },
+  ]
+
+  return {
+    success: true,
+    timestamp: new Date().toISOString(),
+    totalDatabaseRecords: 2198,
+    kpis: {
+      totalRecords: 2198,
+      totalVehicles: 100,
+      violations: {
+        totalCount: 100,
+        totalAmount: 162500,
+        paidAmount: 53750,
+        pendingAmount: 54750,
+        unpaidAmount: 54000,
+        recoveryRate: '33.1',
+      },
+      infrastructure: {
+        totalSignals: 100,
+        activeSignals: 34,
+        totalCameras: 100,
+        activeCameras: 34,
+        totalSensors: 100,
+        activeSensors: 34,
+        totalHardware: 300,
+        totalActiveHardware: 102,
+        hardwareHealthRate: '34.0',
+        totalRoads: 100,
+        totalIntersections: 100,
+      },
+      emergency: {
+        totalVehicles: 100,
+        statusBreakdown: { AVAILABLE: 25, DISPATCHED: 25, BUSY: 25, MAINTENANCE: 25 },
+        readinessRate: '50.0',
+        activeResponsesCount: 50,
+      },
+      transit: {
+        total_buses: 100,
+        bus_capacity: 5920,
+        total_trains: 100,
+        train_capacity: 35050,
+        totalFleetCapacity: 40970,
+        total_schedules: 100,
+        available_tracks: 80,
+        total_passengers: 294,
+      },
+      monitoring: {
+        total_records: 100,
+        avg_speed: '70.5',
+        max_speed: '120.00',
+        avg_volume: '100.5',
+        total_volume: 10050,
+      },
+    },
+    charts: {
+      violationsByType: [
+        { violation_type: 'NO_HELMET', count: 20, total_fines: 42500, avg_fine: 2125 },
+        { violation_type: 'ILLEGAL_PARKING', count: 20, total_fines: 37500, avg_fine: 1875 },
+        { violation_type: 'SIGNAL_JUMP', count: 20, total_fines: 32500, avg_fine: 1625 },
+        { violation_type: 'OVERSPEEDING', count: 20, total_fines: 27500, avg_fine: 1375 },
+        { violation_type: 'LANE_VIOLATION', count: 20, total_fines: 22500, avg_fine: 1125 },
+      ],
+      violationsByStatus: [
+        { fine_status: 'PAID', count: 34, total_fines: 53750 },
+        { fine_status: 'PENDING', count: 33, total_fines: 54750 },
+        { fine_status: 'UNPAID', count: 33, total_fines: 54000 },
+      ],
+      vehiclesByType: [
+        { vehicle_type: 'CAR', count: 20 },
+        { vehicle_type: 'TRUCK', count: 20 },
+        { vehicle_type: 'BUS', count: 20 },
+        { vehicle_type: 'VAN', count: 20 },
+        { vehicle_type: 'MOTORCYCLE', count: 20 },
+      ],
+      roadTypes: [
+        { road_type: 'HIGHWAY', count: 25 },
+        { road_type: 'ARTERIAL', count: 25 },
+        { road_type: 'LOCAL', count: 25 },
+        { road_type: 'COLLECTOR', count: 25 },
+      ],
+      trafficPatterns: [
+        { traffic_pattern: 'CONGESTED', count: 25 },
+        { traffic_pattern: 'HEAVY', count: 25 },
+        { traffic_pattern: 'MODERATE', count: 25 },
+        { traffic_pattern: 'LOW', count: 25 },
+      ],
+      emergencyVehicles: [
+        { vehicle_type: 'AMBULANCE', status: 'AVAILABLE', count: 9 },
+        { vehicle_type: 'FIRE_ENGINE', status: 'AVAILABLE', count: 8 },
+        { vehicle_type: 'POLICE_VAN', status: 'AVAILABLE', count: 8 },
+        { vehicle_type: 'AMBULANCE', status: 'DISPATCHED', count: 8 },
+      ],
+      emergencyResponses: [
+        { response_status: 'OPEN', count: 25 },
+        { response_status: 'IN_PROGRESS', count: 25 },
+        { response_status: 'COMPLETED', count: 25 },
+        { response_status: 'CANCELLED', count: 25 },
+      ],
+      monitoringTimeline: [
+        { record_id: 1, vehicle_speed: 45, traffic_volume: 80 },
+        { record_id: 2, vehicle_speed: 65, traffic_volume: 110 },
+        { record_id: 3, vehicle_speed: 90, traffic_volume: 135 },
+        { record_id: 4, vehicle_speed: 75, traffic_volume: 95 },
+        { record_id: 5, vehicle_speed: 110, traffic_volume: 150 },
+      ],
+    },
+    topRecords: {
+      violations: [
+        { violation_id: 9, violation_type: 'NO_HELMET', fine_amount: 2750, fine_status: 'PENDING', registration_number: 'GJ19AB1009', authority_name: 'Traffic Authority 9', violation_date: '2026-01-09' },
+        { violation_id: 14, violation_type: 'NO_HELMET', fine_amount: 2600, fine_status: 'PAID', registration_number: 'GJ14AB1014', authority_name: 'Traffic Authority 14', violation_date: '2026-01-14' },
+        { violation_id: 3, violation_type: 'SIGNAL_JUMP', fine_amount: 2500, fine_status: 'UNPAID', registration_number: 'GJ03AB1003', authority_name: 'Traffic Authority 3', violation_date: '2026-01-03' },
+        { violation_id: 1, violation_type: 'OVERSPEEDING', fine_amount: 2400, fine_status: 'PAID', registration_number: 'GJ01AB1001', authority_name: 'Traffic Authority 1', violation_date: '2026-01-01' },
+      ],
+      monitoring: [
+        { record_id: 100, road_name: 'Road 100', road_type: 'HIGHWAY', traffic_volume: 150, vehicle_speed: '120.00', sensor_type: 'INDUCTIVE', camera_type: 'THERMAL', timestamp: '2026-01-02T01:30:00.000Z' },
+        { record_id: 95, road_name: 'Road 95', road_type: 'ARTERIAL', traffic_volume: 145, vehicle_speed: '105.00', sensor_type: 'LOOP', camera_type: 'ANPR', timestamp: '2026-01-02T01:15:00.000Z' },
+        { record_id: 88, road_name: 'Road 88', road_type: 'HIGHWAY', traffic_volume: 140, vehicle_speed: '115.00', sensor_type: 'RADAR', camera_type: 'CCTV', timestamp: '2026-01-02T01:00:00.000Z' },
+      ],
+      emergencies: [
+        { response_id: 1, response_status: 'OPEN', emergency_id: 1, vehicle_type: 'AMBULANCE', vehicle_status: 'AVAILABLE', latitude: '23.0225', longitude: '72.5714' },
+        { response_id: 2, response_status: 'IN_PROGRESS', emergency_id: 2, vehicle_type: 'FIRE_ENGINE', vehicle_status: 'DISPATCHED', latitude: '23.0335', longitude: '72.5850' },
+      ],
+      transit: [
+        { transit_unit_id: 1, identifier: 'Route R-001', capacity: 65, type: 'Bus', departure_time: '08:00:00', arrival_time: '09:00:00' },
+        { transit_unit_id: 2, identifier: 'Route R-002', capacity: 60, type: 'Bus', departure_time: '08:30:00', arrival_time: '09:30:00' },
+      ],
+    },
+    tablesSummary: tablesMeta,
+  }
+}
+

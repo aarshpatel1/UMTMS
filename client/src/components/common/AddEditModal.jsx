@@ -237,7 +237,7 @@ export default function AddEditModal({
             )}
           </label>
           {isFk && (
-            <span className="badge bg-light text-muted border small px-2 py-0">
+            <span className="badge bg-light text-muted border small px-2 rounded-pill">
               Ref: {fkInfo?.label || col.label}
             </span>
           )}
@@ -279,7 +279,7 @@ export default function AddEditModal({
               isReadOnly
                 ? 'Primary Key (Generated)'
                 : isPk && !isEdit
-                ? 'Optional (Auto-generated if left blank)'
+                ? ''
                 : `Enter ${col.label.toLowerCase()}`
             }
             value={value}

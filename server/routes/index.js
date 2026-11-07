@@ -22,6 +22,7 @@ import trafficCameraRoutes from "./trafficCameraRoutes.js";
 import roadSensorRoutes from "./roadSensorRoutes.js";
 import trafficMonitoringRecordRoutes from "./trafficMonitoringRecordRoutes.js";
 import batchRoutes from "./batchRoutes.js";
+import dashboardRoutes from "./dashboardRoutes.js";
 
 const router = express.Router();
 
@@ -29,6 +30,7 @@ router.get("/", (req, res) => {
 	return res.status(200).json({
 		message: "UMTMS API is running..!!",
 		endpoints: [
+			"/dashboard/summary",
 			"/public-transits",
 			"/rail-tracks",
 			"/trains",
@@ -54,6 +56,9 @@ router.get("/", (req, res) => {
 		],
 	});
 });
+
+// Dashboard Summary
+router.use("/dashboard", dashboardRoutes);
 
 // Transit & Passenger
 router.use("/public-transits", publicTransitRoutes);
