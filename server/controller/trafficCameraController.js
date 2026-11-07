@@ -34,20 +34,24 @@ export const getTrafficCameraById = async (req, res) => {
 // CREATE traffic camera
 export const createTrafficCamera = async (req, res) => {
 	try {
-		const { camera_id, camera_type, status, record_id, location_id } = req.body;
-		let query;
-		let params;
+		const allowedFields = ["camera_id", "source_id", "camera_type", "status", "road_id", "record_id", "location_id"];
+		const fields = [];
+		const placeholders = [];
+		const params = [];
 
-		if (camera_id !== undefined && camera_id !== null && camera_id !== "") {
-			query = `INSERT INTO umtms.traffic_camera (camera_id, camera_type, status, record_id, location_id)
-				VALUES ($1, $2, $3, $4, $5) RETURNING *`;
-			params = [camera_id, camera_type, status, record_id, location_id];
-		} else {
-			query = `INSERT INTO umtms.traffic_camera (camera_type, status, record_id, location_id)
-				VALUES ($1, $2, $3, $4) RETURNING *`;
-			params = [camera_type, status, record_id, location_id];
+		for (const field of allowedFields) {
+			if (req.body[field] !== undefined && req.body[field] !== null && req.body[field] !== "") {
+				fields.push(field);
+				params.push(req.body[field]);
+				placeholders.push(`$${params.length}`);
+			}
 		}
 
+		if (fields.length === 0) {
+			return res.status(400).json({ success: false, message: "No data provided to create traffic camera" });
+		}
+
+		const query = `INSERT INTO umtms.traffic_camera (${fields.join(", ")}) VALUES (${placeholders.join(", ")}) RETURNING *`;
 		const result = await db.query(query, params);
 		return res.status(201).json({
 			success: true,
@@ -63,7 +67,7 @@ export const createTrafficCamera = async (req, res) => {
 export const updateTrafficCamera = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const allowedFields = ["camera_type", "status", "record_id", "location_id"];
+		const allowedFields = ["source_id", "camera_type", "status", "road_id", "record_id", "location_id"];
 		const updates = [];
 		const params = [];
 		let index = 1;
