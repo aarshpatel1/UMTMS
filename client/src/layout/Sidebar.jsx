@@ -67,7 +67,7 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
 
         {/* Bottom Sidebar Footer */}
-        <div className="sidebar-footer">
+        {/* <div className="sidebar-footer">
           <nav className="nav flex-column">
             <a
               href="#settings"
@@ -109,7 +109,7 @@ export default function Sidebar({ isOpen, onClose }) {
               </div>
             </a>
           </nav>
-        </div>
+        </div> */}
       </aside>
     </>
   )
