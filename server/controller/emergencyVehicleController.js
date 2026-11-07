@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { handleControllerError, validatePayload } from "../utils/validationHelper.js";
 
 // GET all emergency vehicles
 export const getAllEmergencyVehicles = async (req, res) => {
@@ -10,7 +11,7 @@ export const getAllEmergencyVehicles = async (req, res) => {
 			data: result.rows,
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -27,14 +28,19 @@ export const getEmergencyVehicleById = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // CREATE emergency vehicle
 export const createEmergencyVehicle = async (req, res) => {
 	try {
-		const { emergency_vehicle_id, vehicle_type, status, location_id } = req.body;
+		const validation = validatePayload("emergency-vehicles", req.body, false);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
+		const { vehicle_type, status, location_id } = req.body;
+		const emergency_vehicle_id = req.body.emergency_vehicle_id || req.body.vehicle_id;
 		let query;
 		let params;
 
@@ -55,13 +61,17 @@ export const createEmergencyVehicle = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // UPDATE emergency vehicle by ID
 export const updateEmergencyVehicle = async (req, res) => {
 	try {
+		const validation = validatePayload("emergency-vehicles", req.body, true);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { id } = req.params;
 		const allowedFields = ["vehicle_type", "status", "location_id"];
 		const updates = [];
@@ -93,7 +103,7 @@ export const updateEmergencyVehicle = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -113,6 +123,6 @@ export const deleteEmergencyVehicle = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };

@@ -705,6 +705,69 @@ body {
 	background-color: #f2f4f7;
 }
 
+.btn-action-dots.text-primary:hover {
+	color: #175cd3 !important;
+	background-color: #eff8ff;
+}
+
+.btn-action-dots.text-danger:hover {
+	color: #d92d20 !important;
+	background-color: #fee4e2;
+}
+
+/* Spin Animation for Refresh and Loading Indicators */
+.spin-animation {
+	animation: spinRotate 0.8s linear infinite;
+	display: inline-block;
+}
+
+@keyframes spinRotate {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Field Highlight and Focus Animation for Validation Errors */
+.form-control.is-invalid,
+.form-select.is-invalid {
+	border-color: #d92d20 !important;
+	box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.25) !important;
+	background-color: #fffbfa !important;
+	animation: fieldShake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+	border-color: #b42318 !important;
+	box-shadow: 0 0 0 4px rgba(217, 45, 32, 0.35) !important;
+}
+
+@keyframes fieldShake {
+	10%, 90% {
+		transform: translate3d(-1px, 0, 0);
+	}
+	20%, 80% {
+		transform: translate3d(2px, 0, 0);
+	}
+	30%, 50%, 70% {
+		transform: translate3d(-3px, 0, 0);
+	}
+	40%, 60% {
+		transform: translate3d(3px, 0, 0);
+	}
+}
+
+/* Bulk Selection Notification Bar */
+.bulk-selection-bar {
+	background-color: #f9f5ff !important;
+	border: 1px solid #e9d7fe !important;
+	border-left: 4px solid #7f56d9 !important;
+	animation: modalFadeIn 0.2s ease-out;
+}
+
 /* Eye Button for Foreign Keys & ID inspection */
 .btn-eye-id {
 	padding: 2px 7px;

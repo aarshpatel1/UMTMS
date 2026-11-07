@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { handleControllerError, validatePayload } from "../utils/validationHelper.js";
 
 // GET all public transits
 export const getAllPublicTransits = async (req, res) => {
@@ -10,7 +11,7 @@ export const getAllPublicTransits = async (req, res) => {
 			data: result.rows,
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -27,13 +28,17 @@ export const getPublicTransitById = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // CREATE new public transit
 export const createPublicTransit = async (req, res) => {
 	try {
+		const validation = validatePayload("public-transits", req.body, false);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { transit_id, transit_type } = req.body;
 		if (!transit_type && transit_type !== "") {
 			return res.status(400).json({ success: false, message: "transit_type is required" });
@@ -58,13 +63,17 @@ export const createPublicTransit = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // UPDATE public transit by ID
 export const updatePublicTransit = async (req, res) => {
 	try {
+		const validation = validatePayload("public-transits", req.body, true);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { id } = req.params;
 		const { transit_type } = req.body;
 
@@ -87,7 +96,7 @@ export const updatePublicTransit = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -107,6 +116,6 @@ export const deletePublicTransit = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };

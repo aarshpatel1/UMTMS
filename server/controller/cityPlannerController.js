@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { handleControllerError, validatePayload } from "../utils/validationHelper.js";
 
 // GET all city planners
 export const getAllCityPlanners = async (req, res) => {
@@ -10,7 +11,7 @@ export const getAllCityPlanners = async (req, res) => {
 			data: result.rows,
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -27,13 +28,17 @@ export const getCityPlannerById = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // CREATE city planner
 export const createCityPlanner = async (req, res) => {
 	try {
+		const validation = validatePayload("city-planners", req.body, false);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { planner_id, name, department } = req.body;
 		let query;
 		let params;
@@ -55,13 +60,17 @@ export const createCityPlanner = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // UPDATE city planner by ID
 export const updateCityPlanner = async (req, res) => {
 	try {
+		const validation = validatePayload("city-planners", req.body, true);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { id } = req.params;
 		const allowedFields = ["name", "department"];
 		const updates = [];
@@ -93,7 +102,7 @@ export const updateCityPlanner = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -113,6 +122,6 @@ export const deleteCityPlanner = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };

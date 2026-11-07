@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { handleControllerError, validatePayload } from "../utils/validationHelper.js";
 
 // GET all traffic violations
 export const getAllTrafficViolations = async (req, res) => {
@@ -10,7 +11,7 @@ export const getAllTrafficViolations = async (req, res) => {
 			data: result.rows,
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -27,13 +28,17 @@ export const getTrafficViolationById = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // CREATE traffic violation
 export const createTrafficViolation = async (req, res) => {
 	try {
+		const validation = validatePayload("traffic-violations", req.body, false);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const {
 			violation_id,
 			violation_type,
@@ -81,13 +86,17 @@ export const createTrafficViolation = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // UPDATE traffic violation by ID
 export const updateTrafficViolation = async (req, res) => {
 	try {
+		const validation = validatePayload("traffic-violations", req.body, true);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { id } = req.params;
 		const allowedFields = [
 			"violation_type",
@@ -126,7 +135,7 @@ export const updateTrafficViolation = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -146,6 +155,6 @@ export const deleteTrafficViolation = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };

@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { handleControllerError, validatePayload } from "../utils/validationHelper.js";
 
 // GET all locations
 export const getAllLocations = async (req, res) => {
@@ -10,7 +11,7 @@ export const getAllLocations = async (req, res) => {
 			data: result.rows,
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -27,13 +28,17 @@ export const getLocationById = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // CREATE location
 export const createLocation = async (req, res) => {
 	try {
+		const validation = validatePayload("locations", req.body, false);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { location_id, latitude, longitude } = req.body;
 		let query;
 		let params;
@@ -55,13 +60,17 @@ export const createLocation = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // UPDATE location by ID
 export const updateLocation = async (req, res) => {
 	try {
+		const validation = validatePayload("locations", req.body, true);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { id } = req.params;
 		const allowedFields = ["latitude", "longitude"];
 		const updates = [];
@@ -93,7 +102,7 @@ export const updateLocation = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -113,6 +122,6 @@ export const deleteLocation = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };

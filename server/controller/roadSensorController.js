@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { handleControllerError, validatePayload } from "../utils/validationHelper.js";
 
 // GET all road sensors
 export const getAllRoadSensors = async (req, res) => {
@@ -10,7 +11,7 @@ export const getAllRoadSensors = async (req, res) => {
 			data: result.rows,
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -27,13 +28,17 @@ export const getRoadSensorById = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // CREATE road sensor
 export const createRoadSensor = async (req, res) => {
 	try {
+		const validation = validatePayload("road-sensors", req.body, false);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { sensor_id, sensor_type, status, road_id, location_id } = req.body;
 		let query;
 		let params;
@@ -55,13 +60,17 @@ export const createRoadSensor = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // UPDATE road sensor by ID
 export const updateRoadSensor = async (req, res) => {
 	try {
+		const validation = validatePayload("road-sensors", req.body, true);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { id } = req.params;
 		const allowedFields = ["sensor_type", "status", "road_id", "location_id"];
 		const updates = [];
@@ -93,7 +102,7 @@ export const updateRoadSensor = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -113,6 +122,6 @@ export const deleteRoadSensor = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };

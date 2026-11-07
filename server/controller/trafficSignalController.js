@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { handleControllerError, validatePayload } from "../utils/validationHelper.js";
 
 // GET all traffic signals
 export const getAllTrafficSignals = async (req, res) => {
@@ -10,7 +11,7 @@ export const getAllTrafficSignals = async (req, res) => {
 			data: result.rows,
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -27,13 +28,17 @@ export const getTrafficSignalById = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // CREATE traffic signal
 export const createTrafficSignal = async (req, res) => {
 	try {
+		const validation = validatePayload("traffic-signals", req.body, false);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { signal_id, timing_pattern, status, authority_id } = req.body;
 		let query;
 		let params;
@@ -55,13 +60,17 @@ export const createTrafficSignal = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // UPDATE traffic signal by ID
 export const updateTrafficSignal = async (req, res) => {
 	try {
+		const validation = validatePayload("traffic-signals", req.body, true);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { id } = req.params;
 		const allowedFields = ["timing_pattern", "status", "authority_id"];
 		const updates = [];
@@ -93,7 +102,7 @@ export const updateTrafficSignal = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -113,6 +122,6 @@ export const deleteTrafficSignal = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };

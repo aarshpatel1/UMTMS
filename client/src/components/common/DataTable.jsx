@@ -11,36 +11,58 @@ export default function DataTable({
   sortDirection,
   onSort,
   onOpenRelated,
+  selectedIds: controlledSelectedIds,
+  onToggleSelectRow: controlledToggleSelectRow,
+  onToggleSelectAll: controlledToggleSelectAll,
+  onClearSelection: controlledClearSelection,
+  onEdit,
+  onDelete,
+  onBulkDelete,
 }) {
-  const [selectedIds, setSelectedIds] = useState(new Set())
+  // Local selection state if not controlled by parent
+  const [localSelectedIds, setLocalSelectedIds] = useState(new Set())
 
-  // Toggle selection for a single row
+  const selectedIds = controlledSelectedIds || localSelectedIds
+
   const toggleSelectRow = (id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return next
-    })
+    if (controlledToggleSelectRow) {
+      controlledToggleSelectRow(id)
+    } else {
+      setLocalSelectedIds((prev) => {
+        const next = new Set(prev)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        return next
+      })
+    }
   }
 
-  // Toggle select all on current page
+  // Check if all rows on current page are selected
   const allCurrentSelected =
     data.length > 0 && data.every((row) => selectedIds.has(row[primaryKey]))
 
   const toggleSelectAll = () => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (allCurrentSelected) {
-        data.forEach((row) => next.delete(row[primaryKey]))
-      } else {
-        data.forEach((row) => next.add(row[primaryKey]))
-      }
-      return next
-    })
+    if (controlledToggleSelectAll) {
+      controlledToggleSelectAll()
+    } else {
+      setLocalSelectedIds((prev) => {
+        const next = new Set(prev)
+        if (allCurrentSelected) {
+          data.forEach((row) => next.delete(row[primaryKey]))
+        } else {
+          data.forEach((row) => next.add(row[primaryKey]))
+        }
+        return next
+      })
+    }
+  }
+
+  const clearSelection = () => {
+    if (controlledClearSelection) {
+      controlledClearSelection()
+    } else {
+      setLocalSelectedIds(new Set())
+    }
   }
 
   // Helper to render badge colors based on text/status
@@ -141,7 +163,6 @@ export default function DataTable({
     if (col.isPrimary) {
       return (
         <div className="cell-primary">
-         
           <div>
             <div className="cell-title">{formatCellDisplay(col.key, val)}</div>
           </div>
@@ -149,12 +170,46 @@ export default function DataTable({
       )
     }
 
-    // Default formatted string (including dates and timestamps)
+    // Default formatted string
     return formatCellDisplay(col.key, val)
   }
 
   return (
     <div className="table-responsive-custom">
+      {/* Sleek Bulk Actions Bar when rows are selected */}
+      {selectedIds.size > 0 && (
+        <div className="bulk-selection-bar d-flex align-items-center justify-content-between p-2 px-3 mb-2 rounded bg-light border">
+          <div className="d-flex align-items-center gap-2">
+            <span className="badge bg-dark text-white rounded-pill px-2 py-1">
+              {selectedIds.size}
+            </span>
+            <span className="small fw-semibold text-secondary">
+              record{selectedIds.size > 1 ? 's' : ''} selected
+            </span>
+          </div>
+
+          <div className="d-flex align-items-center gap-2">
+            <button
+              type="button"
+              className="btn btn-sm btn-link text-muted p-0 text-decoration-none small"
+              onClick={clearSelection}
+            >
+              Clear selection
+            </button>
+            {onBulkDelete && (
+              <button
+                type="button"
+                className="btn btn-sm btn-danger d-inline-flex align-items-center gap-1 px-3 py-1 fw-semibold"
+                onClick={onBulkDelete}
+              >
+                <i className="bi bi-trash3-fill"></i>
+                <span>Delete Selected ({selectedIds.size})</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <table className="custom-table">
         <thead>
           <tr>
@@ -199,7 +254,7 @@ export default function DataTable({
             })}
 
             {/* Actions Column */}
-            <th style={{ width: '80px', textAlign: 'center' }}>
+            <th style={{ width: '120px', textAlign: 'center' }}>
               <span>Actions</span>
             </th>
           </tr>
@@ -243,12 +298,12 @@ export default function DataTable({
                     <td key={col.key}>{renderCellContent(row, col)}</td>
                   ))}
 
-                  {/* Actions Dropdown & Eye Button */}
+                  {/* Action Buttons: View, Edit, Delete */}
                   <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
-                    {/* Eye Button to View This Row Record Modal */}
+                    {/* View Details Eye */}
                     <button
                       type="button"
-                      className="btn-action-dots text-primary me-1"
+                      className="btn-action-dots text-secondary me-1"
                       title="View full record details"
                       onClick={() => {
                         if (onOpenRelated) {
@@ -259,17 +314,29 @@ export default function DataTable({
                       <i className="bi bi-eye"></i>
                     </button>
 
-                    {/* Three dots action */}
-                    <button
-                      type="button"
-                      className="btn-action-dots"
-                      title="More actions"
-                      onClick={() =>
-                        alert(`Actions for record #${id} (CRUD will be handled later)`)
-                      }
-                    >
-                      <i className="bi bi-three-dots-vertical"></i>
-                    </button>
+                    {/* Edit Record Pencil */}
+                    {onEdit && (
+                      <button
+                        type="button"
+                        className="btn-action-dots text-primary me-1"
+                        title="Edit record"
+                        onClick={() => onEdit(row)}
+                      >
+                        <i className="bi bi-pencil-square"></i>
+                      </button>
+                    )}
+
+                    {/* Delete Record Trash */}
+                    {onDelete && (
+                      <button
+                        type="button"
+                        className="btn-action-dots text-danger"
+                        title="Delete record"
+                        onClick={() => onDelete(row)}
+                      >
+                        <i className="bi bi-trash3"></i>
+                      </button>
+                    )}
                   </td>
                 </tr>
               )

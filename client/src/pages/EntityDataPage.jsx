@@ -1,11 +1,20 @@
 import { useState, useEffect, useMemo } from "react";
 import { ENTITIES_CONFIG } from "../config/routesConfig";
-import { fetchEntityRecords, fetchRecordById } from "../api/apiClient";
+import {
+	fetchEntityRecords,
+	fetchRecordById,
+	createEntityRecord,
+	updateEntityRecord,
+	deleteEntityRecord,
+	deleteMultipleEntityRecords,
+} from "../api/apiClient";
 import Toolbar from "../components/common/Toolbar";
 import DataTable from "../components/common/DataTable";
 import Pagination from "../components/common/Pagination";
 import FilterModal from "../components/common/FilterModal";
 import RelatedRecordModal from "../components/common/RelatedRecordModal";
+import AddEditModal from "../components/common/AddEditModal";
+import DeleteConfirmModal from "../components/common/DeleteConfirmModal";
 import LoadingSkeleton from "../components/common/LoadingSkeleton";
 import ErrorAlert from "../components/common/ErrorAlert";
 
@@ -16,6 +25,23 @@ export default function EntityDataPage({ entityKey }) {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
 	const [isFallback, setIsFallback] = useState(false);
+	const [isRefreshing, setIsRefreshing] = useState(false);
+
+	// Row Selection state for bulk operations
+	const [selectedIds, setSelectedIds] = useState(new Set());
+
+	// Add / Edit Modal state
+	const [addEditModalOpen, setAddEditModalOpen] = useState(false);
+	const [addEditMode, setAddEditMode] = useState("add"); // 'add' | 'edit'
+	const [editingRecord, setEditingRecord] = useState(null);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	// Delete Confirmation Modal state (Single & Multiple)
+	const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+	const [deleteMode, setDeleteMode] = useState("single"); // 'single' | 'multiple'
+	const [recordToDelete, setRecordToDelete] = useState(null);
+	const [isDeleting, setIsDeleting] = useState(false);
+	const [deleteError, setDeleteError] = useState(null);
 
 	// Search & Filter state
 	const [searchQuery, setSearchQuery] = useState("");
@@ -35,10 +61,14 @@ export default function EntityDataPage({ entityKey }) {
 	const [pageSize, setPageSize] = useState(10);
 	const [currentPage, setCurrentPage] = useState(1);
 
-	// Load records on entity change
-	const loadRecords = async () => {
+	// Load records on entity change or manual refresh
+	const loadRecords = async (showRefreshIndicator = false) => {
 		if (!config) return;
-		setLoading(true);
+		if (showRefreshIndicator) {
+			setIsRefreshing(true);
+		} else {
+			setLoading(true);
+		}
 		setError(null);
 
 		try {
@@ -54,6 +84,7 @@ export default function EntityDataPage({ entityKey }) {
 			setIsFallback(true);
 		} finally {
 			setLoading(false);
+			setIsRefreshing(false);
 		}
 	};
 
@@ -62,6 +93,7 @@ export default function EntityDataPage({ entityKey }) {
 		setSearchQuery("");
 		setActiveFilter(null);
 		setModalStack([]);
+		setSelectedIds(new Set());
 		setCurrentPage(1);
 		if (config) {
 			setSortColumn(config.columns[0]?.key || "");
@@ -82,7 +114,6 @@ export default function EntityDataPage({ entityKey }) {
 
 		setModalStack((prev) => [...prev, newModal]);
 
-		// Asynchronously fetch the related record
 		fetchRecordById(targetEntityKey, targetId)
 			.then((res) => {
 				setModalStack((prev) => {
@@ -149,6 +180,110 @@ export default function EntityDataPage({ entityKey }) {
 		setCurrentPage(1);
 	};
 
+	// Row Selection Handlers
+	const handleToggleSelectRow = (id) => {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	};
+
+	const handleToggleSelectAll = () => {
+		const allCurrentSelected =
+			paginatedData.length > 0 &&
+			paginatedData.every((row) => selectedIds.has(row[config.primaryKey]));
+
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			if (allCurrentSelected) {
+				paginatedData.forEach((row) => next.delete(row[config.primaryKey]));
+			} else {
+				paginatedData.forEach((row) => next.add(row[config.primaryKey]));
+			}
+			return next;
+		});
+	};
+
+	const handleClearSelection = () => {
+		setSelectedIds(new Set());
+	};
+
+	// CRUD Modal Triggers
+	const handleOpenAdd = () => {
+		setAddEditMode("add");
+		setEditingRecord(null);
+		setAddEditModalOpen(true);
+	};
+
+	const handleOpenEdit = (row) => {
+		setAddEditMode("edit");
+		setEditingRecord(row);
+		setAddEditModalOpen(true);
+	};
+
+	const handleSaveRecord = async (formData) => {
+		setIsSubmitting(true);
+		try {
+			if (addEditMode === "add") {
+				await createEntityRecord(entityKey, formData);
+			} else {
+				const id = editingRecord[config.primaryKey];
+				await updateEntityRecord(entityKey, id, formData);
+			}
+			setAddEditModalOpen(false);
+			// Refresh component for fresh data
+			await loadRecords(true);
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	const handleOpenSingleDelete = (row) => {
+		setDeleteMode("single");
+		setRecordToDelete(row);
+		setDeleteError(null);
+		setDeleteModalOpen(true);
+	};
+
+	const handleOpenBulkDelete = () => {
+		if (selectedIds.size === 0) return;
+		setDeleteMode("multiple");
+		setRecordToDelete(null);
+		setDeleteError(null);
+		setDeleteModalOpen(true);
+	};
+
+	const handleConfirmDelete = async () => {
+		setIsDeleting(true);
+		setDeleteError(null);
+
+		try {
+			if (deleteMode === "single") {
+				const id = recordToDelete[config.primaryKey];
+				await deleteEntityRecord(entityKey, id);
+				setSelectedIds((prev) => {
+					const next = new Set(prev);
+					next.delete(id);
+					return next;
+				});
+			} else {
+				const ids = Array.from(selectedIds);
+				await deleteMultipleEntityRecords(entityKey, ids);
+				setSelectedIds(new Set());
+			}
+
+			setDeleteModalOpen(false);
+			// Refresh component for fresh data
+			await loadRecords(true);
+		} catch (err) {
+			setDeleteError(err.message || "Failed to delete record(s)");
+		} finally {
+			setIsDeleting(false);
+		}
+	};
+
 	// Filtered and sorted data
 	const filteredRecords = useMemo(() => {
 		let result = [...records];
@@ -198,12 +333,10 @@ export default function EntityDataPage({ entityKey }) {
 				if (aVal === null || aVal === undefined) return 1;
 				if (bVal === null || bVal === undefined) return -1;
 
-				// Number comparison if both are numeric
 				if (!isNaN(aVal) && !isNaN(bVal)) {
 					return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
 				}
 
-				// String comparison
 				const aStr = String(aVal).toLowerCase();
 				const bStr = String(bVal).toLowerCase();
 				if (aStr < bStr) return sortDirection === "asc" ? -1 : 1;
@@ -218,8 +351,6 @@ export default function EntityDataPage({ entityKey }) {
 	// Pagination calculation
 	const totalRecords = filteredRecords.length;
 	const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
-
-	// Ensure currentPage is within bounds
 	const safeCurrentPage = Math.min(currentPage, totalPages);
 
 	const paginatedData = useMemo(() => {
@@ -240,12 +371,6 @@ export default function EntityDataPage({ entityKey }) {
 			{/* Breadcrumbs Navigation */}
 			<div className="d-flex align-items-center justify-content-between flex-row-reverse">
 				<div className="breadcrumbs-bar">
-					{/* <span className="breadcrumb-logo-badge">
-          <i
-            className="bi bi-layers-fill text-white"
-            style={{ fontSize: '0.65rem' }}
-          ></i>
-        </span> */}
 					<span>UMTMS</span>
 					<span className="breadcrumb-separator">›</span>
 					<span>{config.category}</span>
@@ -264,7 +389,7 @@ export default function EntityDataPage({ entityKey }) {
 					<ErrorAlert
 						message={error}
 						isFallback={isFallback}
-						onRetry={loadRecords}
+						onRetry={() => loadRecords(false)}
 					/>
 				)}
 
@@ -282,11 +407,11 @@ export default function EntityDataPage({ entityKey }) {
 					onPageSizeChange={handlePageSizeChange}
 					onOpenFilter={() => setFilterModalOpen(true)}
 					activeFiltersCount={activeFilter ? 1 : 0}
-					onAddClick={() => {
-						alert(
-							`Add ${config.singularTitle} modal will be available when CRUD operations are enabled.`,
-						);
-					}}
+					onAddClick={handleOpenAdd}
+					onRefresh={() => loadRecords(true)}
+					isRefreshing={isRefreshing}
+					selectedCount={selectedIds.size}
+					onDeleteSelected={handleOpenBulkDelete}
 				/>
 
 				{/* Active Filter Pill Bar */}
@@ -340,6 +465,13 @@ export default function EntityDataPage({ entityKey }) {
 							sortDirection={sortDirection}
 							onSort={handleSort}
 							onOpenRelated={handleOpenRelated}
+							selectedIds={selectedIds}
+							onToggleSelectRow={handleToggleSelectRow}
+							onToggleSelectAll={handleToggleSelectAll}
+							onClearSelection={handleClearSelection}
+							onEdit={handleOpenEdit}
+							onDelete={handleOpenSingleDelete}
+							onBulkDelete={handleOpenBulkDelete}
 						/>
 
 						{/* Pagination Controls */}
@@ -376,6 +508,33 @@ export default function EntityDataPage({ entityKey }) {
 				onCloseTop={handleCloseTopModal}
 				onCloseAll={handleCloseAllModals}
 				onOpenRelated={handleOpenRelated}
+			/>
+
+			{/* Add / Edit Modal */}
+			<AddEditModal
+				isOpen={addEditModalOpen}
+				mode={addEditMode}
+				entityKey={entityKey}
+				config={config}
+				record={editingRecord}
+				onClose={() => setAddEditModalOpen(false)}
+				onSave={handleSaveRecord}
+				isSubmitting={isSubmitting}
+			/>
+
+			{/* Delete Confirmation Modal (Single & Multiple) */}
+			<DeleteConfirmModal
+				isOpen={deleteModalOpen}
+				mode={deleteMode}
+				entityTitle={config.singularTitle}
+				record={recordToDelete}
+				count={selectedIds.size}
+				selectedIds={Array.from(selectedIds)}
+				primaryKey={config.primaryKey}
+				onClose={() => setDeleteModalOpen(false)}
+				onConfirm={handleConfirmDelete}
+				isDeleting={isDeleting}
+				error={deleteError}
 			/>
 		</div>
 	);

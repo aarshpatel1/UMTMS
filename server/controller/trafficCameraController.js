@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { handleControllerError, validatePayload } from "../utils/validationHelper.js";
 
 // GET all traffic cameras
 export const getAllTrafficCameras = async (req, res) => {
@@ -10,7 +11,7 @@ export const getAllTrafficCameras = async (req, res) => {
 			data: result.rows,
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -27,13 +28,17 @@ export const getTrafficCameraById = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // CREATE traffic camera
 export const createTrafficCamera = async (req, res) => {
 	try {
+		const validation = validatePayload("traffic-cameras", req.body, false);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const allowedFields = ["camera_id", "source_id", "camera_type", "status", "road_id", "record_id", "location_id"];
 		const fields = [];
 		const placeholders = [];
@@ -59,13 +64,17 @@ export const createTrafficCamera = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // UPDATE traffic camera by ID
 export const updateTrafficCamera = async (req, res) => {
 	try {
+		const validation = validatePayload("traffic-cameras", req.body, true);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { id } = req.params;
 		const allowedFields = ["source_id", "camera_type", "status", "road_id", "record_id", "location_id"];
 		const updates = [];
@@ -97,7 +106,7 @@ export const updateTrafficCamera = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -117,6 +126,6 @@ export const deleteTrafficCamera = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };

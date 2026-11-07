@@ -21,6 +21,7 @@ import roadRoutes from "./roadRoutes.js";
 import trafficCameraRoutes from "./trafficCameraRoutes.js";
 import roadSensorRoutes from "./roadSensorRoutes.js";
 import trafficMonitoringRecordRoutes from "./trafficMonitoringRecordRoutes.js";
+import batchRoutes from "./batchRoutes.js";
 
 const router = express.Router();
 
@@ -108,5 +109,8 @@ router.use("/road-sensors", roadSensorRoutes);
 router.use("/road-sensor", roadSensorRoutes);
 router.use("/traffic-monitoring-records", trafficMonitoringRecordRoutes);
 router.use("/traffic-monitoring-record", trafficMonitoringRecordRoutes);
+
+// Universal Batch Delete and Bulk Operations
+router.use("/", batchRoutes);
 
 export default router;

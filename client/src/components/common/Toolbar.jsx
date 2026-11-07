@@ -9,6 +9,10 @@ export default function Toolbar({
   activeFiltersCount = 0,
   onAddClick,
   singularTitle = 'Record',
+  onRefresh,
+  isRefreshing = false,
+  selectedCount = 0,
+  onDeleteSelected,
 }) {
   return (
     <div className="toolbar-container">
@@ -16,6 +20,12 @@ export default function Toolbar({
       <div className="toolbar-title-wrap">
         <h2 className="toolbar-title">All {title.toLowerCase()}</h2>
         <span className="toolbar-count-badge">{count}</span>
+        {isRefreshing && (
+          <span className="badge bg-light text-primary border ms-2 small d-inline-flex align-items-center gap-1">
+            <span className="spinner-border spinner-border-sm" style={{ width: '0.75rem', height: '0.75rem' }} role="status"></span>
+            Refreshing...
+          </span>
+        )}
       </div>
 
       {/* Toolbar Controls */}
@@ -75,6 +85,34 @@ export default function Toolbar({
             </span>
           )}
         </button>
+
+        {/* Refresh Button */}
+        {onRefresh && (
+          <button
+            type="button"
+            className="btn-filter"
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            title="Refresh fresh data"
+          >
+            <i className={`bi bi-arrow-clockwise ${isRefreshing ? 'spin-animation' : ''}`}></i>
+            <span className="d-none d-md-inline">Refresh</span>
+          </button>
+        )}
+
+        {/* Delete Selected Button (if items selected) */}
+        {selectedCount > 0 && onDeleteSelected && (
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1 px-3 py-2 fw-semibold"
+            style={{ borderRadius: 'var(--radius-md)' }}
+            onClick={onDeleteSelected}
+            title={`Delete ${selectedCount} selected items`}
+          >
+            <i className="bi bi-trash3-fill"></i>
+            <span>Delete ({selectedCount})</span>
+          </button>
+        )}
 
         {/* Add Record Button */}
         <button

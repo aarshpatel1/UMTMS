@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { handleControllerError, validatePayload } from "../utils/validationHelper.js";
 
 // GET all rail tracks
 export const getAllRailTracks = async (req, res) => {
@@ -10,7 +11,7 @@ export const getAllRailTracks = async (req, res) => {
 			data: result.rows,
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -30,13 +31,17 @@ export const getRailTrackById = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // CREATE rail track
 export const createRailTrack = async (req, res) => {
 	try {
+		const validation = validatePayload("rail-tracks", req.body, false);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { track_id, track_number, availability } = req.body;
 		let result;
 
@@ -58,13 +63,17 @@ export const createRailTrack = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // UPDATE rail track by ID
 export const updateRailTrack = async (req, res) => {
 	try {
+		const validation = validatePayload("rail-tracks", req.body, true);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { id } = req.params;
 		const allowedFields = ["track_number", "availability"];
 		const updates = [];
@@ -96,7 +105,7 @@ export const updateRailTrack = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -116,6 +125,6 @@ export const deleteRailTrack = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };

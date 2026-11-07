@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { handleControllerError, validatePayload } from "../utils/validationHelper.js";
 
 // GET all traffic monitoring records
 export const getAllTrafficMonitoringRecords = async (req, res) => {
@@ -10,7 +11,7 @@ export const getAllTrafficMonitoringRecords = async (req, res) => {
 			data: result.rows,
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -27,13 +28,17 @@ export const getTrafficMonitoringRecordById = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // CREATE traffic monitoring record
 export const createTrafficMonitoringRecord = async (req, res) => {
 	try {
+		const validation = validatePayload("traffic-monitoring-records", req.body, false);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const {
 			record_id,
 			vehicle_speed,
@@ -84,13 +89,17 @@ export const createTrafficMonitoringRecord = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // UPDATE traffic monitoring record by ID
 export const updateTrafficMonitoringRecord = async (req, res) => {
 	try {
+		const validation = validatePayload("traffic-monitoring-records", req.body, true);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { id } = req.params;
 		const allowedFields = [
 			"vehicle_speed",
@@ -130,7 +139,7 @@ export const updateTrafficMonitoringRecord = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -150,6 +159,6 @@ export const deleteTrafficMonitoringRecord = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };

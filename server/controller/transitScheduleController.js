@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { handleControllerError, validatePayload } from "../utils/validationHelper.js";
 
 // GET all transit schedules
 export const getAllTransitSchedules = async (req, res) => {
@@ -10,7 +11,7 @@ export const getAllTransitSchedules = async (req, res) => {
 			data: result.rows,
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -27,13 +28,17 @@ export const getTransitScheduleById = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // CREATE transit schedule
 export const createTransitSchedule = async (req, res) => {
 	try {
+		const validation = validatePayload("transit-schedules", req.body, false);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { schedule_id, arrival_time, departure_time, bus_id, train_id } = req.body;
 		let query;
 		let params;
@@ -55,13 +60,17 @@ export const createTransitSchedule = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // UPDATE transit schedule by ID
 export const updateTransitSchedule = async (req, res) => {
 	try {
+		const validation = validatePayload("transit-schedules", req.body, true);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { id } = req.params;
 		const allowedFields = ["arrival_time", "departure_time", "bus_id", "train_id"];
 		const updates = [];
@@ -93,7 +102,7 @@ export const updateTransitSchedule = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -113,6 +122,6 @@ export const deleteTransitSchedule = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };

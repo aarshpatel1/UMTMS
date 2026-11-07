@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { handleControllerError, validatePayload } from "../utils/validationHelper.js";
 
 // GET all historical traffic data
 export const getAllHistoricalTrafficData = async (req, res) => {
@@ -10,7 +11,7 @@ export const getAllHistoricalTrafficData = async (req, res) => {
 			data: result.rows,
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -27,13 +28,17 @@ export const getHistoricalTrafficDataById = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // CREATE historical traffic data
 export const createHistoricalTrafficData = async (req, res) => {
 	try {
+		const validation = validatePayload("historical-traffic-data", req.body, false);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { history_id, record_date, traffic_pattern, planner_id } = req.body;
 		let query;
 		let params;
@@ -55,13 +60,17 @@ export const createHistoricalTrafficData = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
 // UPDATE historical traffic data by ID
 export const updateHistoricalTrafficData = async (req, res) => {
 	try {
+		const validation = validatePayload("historical-traffic-data", req.body, true);
+		if (!validation.isValid) {
+			return res.status(400).json({ success: false, message: "Validation failed", errors: validation.errors });
+		}
 		const { id } = req.params;
 		const allowedFields = ["record_date", "traffic_pattern", "planner_id"];
 		const updates = [];
@@ -93,7 +102,7 @@ export const updateHistoricalTrafficData = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };
 
@@ -113,6 +122,6 @@ export const deleteHistoricalTrafficData = async (req, res) => {
 			data: result.rows[0],
 		});
 	} catch (error) {
-		return res.status(500).json({ success: false, error: error.message });
+		return handleControllerError(res, error);
 	}
 };

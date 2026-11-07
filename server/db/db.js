@@ -8,6 +8,8 @@ const db = new pg.Client({
 	port: 5432,
 });
 
-db.connect();
+db.connect().catch((err) => {
+	console.warn("PostgreSQL connection notice:", err.message);
+});
 
 export default db;
